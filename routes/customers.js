@@ -2,10 +2,11 @@ var express = require('express');
 var router = express.Router();
 var mongoose = require('mongoose');
 var Customer = mongoose.model('Customer');
+var Parse = require('parse/node');
 
 /* GET a customer by full name */
-router.get('/search/:name', function(req, res, next) {
-  Customer.findOne({name: new RegExp('^'+req.params.name, "i")}, (err, customer, msg) => {
+router.get('/search', function(req, res, next) {
+  Customer.find({name: new RegExp('^'+req.query.name, "i")}, (err, customer, msg) => {
     if (err) {
       if (err.name === 'CastError') {
         res.status(400);
@@ -20,7 +21,6 @@ router.get('/search/:name', function(req, res, next) {
 
 /* CREATE a customer */
 router.post('/', function(req, res, next) {
-  console.info('body', req.body);
   var customer = new Customer(req.body);
   customer.save((err, result) => {
     if (err) {
@@ -31,6 +31,39 @@ router.post('/', function(req, res, next) {
       res.status(500);
       return res.render('error', { error: err });
     }
+
+    Parse.initialize("YGMVB63cSq2DGVPRQFpKiU5fI7NrwaWcUkWMDKVt", 
+      "l0qk5gPw91pBrbGpGDBAkGJUSeH46QpFnHVhKjN1", 
+      "6zbAjz3cKKXagyxgclmcFRcOCRdjNfomqEOrYEWV");
+
+    var rand = getRandomInt(0, 2);
+    var message = "";
+    switch (rand) {
+      case 0:
+        message = "Health services requested from St Partick Center."
+        break;
+      case 1:
+        message = "Job training requested from St. Francis Community Services."
+        break;
+      case 2:
+        message = "Housing services requested from Humanitri."
+    }
+
+    Parse.Push.send({
+          badge: 1,
+          channels: ['global'],
+          data: {
+            alert: message
+          }
+        }, {
+          success: function() {
+            console.log("Sent push notification.");
+          },
+          error: function(error) {
+            console.log("Error sending push notification", error);
+          }
+        });
+
     res.json(result);
   });
 });
@@ -96,5 +129,11 @@ router.get('/', function(req, res, next) {
     res.json(customers);
   });
 });
+
+function getRandomInt(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min)) + min;
+}
 
 module.exports = router;
