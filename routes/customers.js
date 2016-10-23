@@ -3,6 +3,8 @@ var router = express.Router();
 var mongoose = require('mongoose');
 var Customer = mongoose.model('Customer');
 var Parse = require('parse/node');
+var twilio = require('twilio');
+var client = new twilio.RestClient('AC8e4380263b580396ca81dd4fd20f6e69', '0a654febbbe7f022b34b33d80a4a38df');
 
 /* GET a customer by full name */
 router.get('/search', function(req, res, next) {
@@ -63,6 +65,21 @@ router.post('/', function(req, res, next) {
             console.log("Error sending push notification", error);
           }
         });
+     
+    // Pass in parameters to the REST API using an object literal notation. The
+    // REST client will handle authentication and response serialzation for you.
+    client.sms.messages.create({
+        to:'+19136532897',
+        from:'+18166562627',
+        body: message
+    }, function(error, message) {
+        if (!error) {
+          console.log('Success! The SID for this SMS message is:', message.sid);
+        } 
+      else {
+          console.log('Oops! There was an error.', error);
+        }
+    });
 
     res.json(result);
   });
